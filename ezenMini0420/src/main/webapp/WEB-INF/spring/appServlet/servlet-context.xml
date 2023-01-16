@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<annotation-driven />
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+	<resources mapping="/resources/**" location="/resources/" />
+	<resources mapping="/html/**"	location="/resources/html/"/>
+	<resources mapping="/js/**"	location="/resources/js/"/>
+	<resources mapping="/style/**"	location="/resources/style/"/>
+	<resources mapping="/images/**"	location="/resources/images/"/>
+	<resources mapping="/upimage/**"	location="/resources/upimage/"/>
+	<resources mapping="/txt/**"	location="/resources/txt/"/>
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	
+	<!-- spring에서 제공하는 dataSource bean을 정의-->
+	<beans:bean name="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<beans:property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"></beans:property>
+		<beans:property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"></beans:property>
+		<beans:property name="username" value="scott"></beans:property>
+		<beans:property name="password" value="tiger"></beans:property>
+	</beans:bean>
+	
+	<!-- dataSource bean을 멤버필드로 사용하는 JdbeTemplate bean 정의 -->
+	<beans:bean name="template" class="org.springframework.jdbc.core.JdbcTemplate">
+		<beans:property name="dataSource" ref="dataSource"></beans:property>
+	</beans:bean>
+	
+	<!-- 트랜잭션 매니저 처리 -->
+	<beans:bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
+	<!-- 트랜잭션 템플레이트 처리 -->
+	<beans:bean name="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">
+		<beans:property name="transactionManager" ref="transactionManager"></beans:property>
+	</beans:bean>
+	
+	<!-- commons fileupload 빈 -->
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <!-- max upload size in bytes --> 
+       <beans:property name="maxUploadSize" value="5242880" /> 
+          <!-- 5MB -->
+        <!-- max size of file in memory (in bytes)  disk저장전 memory저장 용량 -->  	
+       <beans:property name="maxInMemorySize" value="1048576" /> 
+          <!-- 1MB --> 
+	</beans:bean> 
+	
+	<!-- mybatis 처리를 위한 클래스 객체 -->
+	<beans:bean name="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<beans:property name="dataSource" ref="dataSource"></beans:property>
+		<beans:property name="mapperLocations" value="classpath:com/kyk/ezenPJT/dao/mapper/*.xml"></beans:property> 
+	</beans:bean>
+	
+	<!-- sql처리에 필요한 모든 메서드를 가지고 있는 객체 -->
+	<beans:bean name="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<beans:constructor-arg index="0" ref="sqlSessionFactory"></beans:constructor-arg>
+	</beans:bean>
+	
+	<!-- 패스워드 암호화 bean(회원가입시 패스워드 암호화, 로그인시는 security-context.xml에서 처리 -->
+	<beans:bean name="passwordEncoder"
+		class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+	
+	<!-- Dao 빈 -->
+	<beans:bean name="edao" class="com.kyk.ezenPJT.dao.EzenDao"/>
+	
+	<!-- naver social bean -->
+	<beans:bean id="naverLoginBO" name="naverLoginBO" class="com.kyk.ezenPJT.naver.NaverLoginBO"></beans:bean>
+	
+	<!-- google social login Class Bean설정 추가 -->
+	<!-- 클라이언트ID와 보안비밀세팅(구글 cloud에 접속하여 콘솔로 입장하여 API에서 등록하여 얻은 값) -->
+	<beans:bean id="googleConnectionFactory" class="org.springframework.social.google.connect.GoogleConnectionFactory">
+		<beans:constructor-arg value="269056162233-25q8decbcfj2ph2vg477tpcr294ghf77.apps.googleusercontent.com"/>
+		<beans:constructor-arg value="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"/>
+	</beans:bean>
+	
+	<beans:bean id="googleOAuth2Parameters" class="org.springframework.social.oauth2.OAuth2Parameters">
+		<beans:property name="scope" value="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email"/>
+		<beans:property name="redirectUri" value="https://localhost:8443/ezenPJT/gredirect"/>
+	</beans:bean>
+	<context:component-scan base-package="com.kyk.ezenPJT" />
+
+</beans:beans>

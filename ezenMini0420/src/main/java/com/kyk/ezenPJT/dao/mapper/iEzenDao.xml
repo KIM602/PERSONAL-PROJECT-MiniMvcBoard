@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kyk.ezenPJT.dao.IEzenDao">
+	<insert id="join" parameterType="com.kyk.ezenPJT.dto.EzenJoinDto">
+		INSERT INTO EZENUSER(PID,PPW,PADDRESS,PHOBBY,PPROFILE) 
+		VALUES(#{pid},#{ppw},#{paddress},#{phobby},#{pprofile})
+	</insert>
+	
+	<select id="login" parameterType="String" resultType="com.kyk.ezenPJT.dto.EzenJoinDto">
+		SELECT * FROM EZENUSER WHERE PID = #{pid}
+	</select>
+	
+	<!-- recipe -->
+	<select id="recipeList" resultType="com.kyk.ezenPJT.dto.RecipeDto">
+		SELECT * FROM RECIPE ORDER BY RID DESC
+	</select>
+	
+	<insert id="recipeWrite" parameterType="com.kyk.ezenPJT.dto.RecipeDto">
+		INSERT INTO RECIPE(RID,RCLASS,RTRNAME,RTITLE,RPHOTO,RCONTENT,RPRICE,RADDRESS) 
+		VALUES(RECIPE_SEQ.nextval,#{rClass},#{rtrName},#{rTitle},#{rPhoto},#{rContent},#{rPrice},#{rAddress})
+	</insert>
+	
+	<select id="recipeDetails"  parameterType="int" resultType="com.kyk.ezenPJT.dto.RecipeDto">
+		SELECT * FROM RECIPE WHERE RID = #{rId}
+	</select>
+	
+	<!-- admin -->
+	<update id="adminAuth" parameterType="com.kyk.ezenPJT.dto.EzenJoinDto">
+		UPDATE EZENUSER SET AUTH = #{auth} WHERE PID = #{pid}
+	</update>
+	
+	<!-- eBoard -->
+	<select id="list" resultType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		<!-- mybatis태그나 키워드 등에 사용되는 문자를 일반 문자로 사용시에는 <![CDATA[       ]] 
+		  안에다 sql문을 만듬
+		-->
+		<!--ROWNUM은 오라클의 행번호를 표시하는 가상 컬럼명  -->
+		<![CDATA[
+			SELECT * FROM (SELECT A.*,ROWNUM AS RNUM
+			FROM(SELECT * FROM MVC_BOARD ORDER BY BGROUP DESC,BSTEP ASC)A)
+			WHERE RNUM < 11
+		]]>
+	</select>
+	
+	<select id="pageList" parameterType="int" resultType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		<![CDATA[
+			SELECT * FROM(SELECT A.*,ROWNUM AS RNUM
+			FROM(SELECT * FROM MVC_BOARD ORDER BY BGROUP DESC,BSTEP ASC)A)
+			WHERE RNUM >= #{startNo} AND RNUM <= #{startNo} + 9
+		]]>
+	</select>
+	
+	<insert id="bWrite" parameterType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		INSERT INTO MVC_BOARD(BID,BNAME,BTITLE,BCONTENT,BHIT,BGROUP,BSTEP,BINDENT) 
+		VALUES(MVC_BOARD_SEQ.nextval,#{bName},#{bTitle},#{bContent},0,MVC_BOARD_SEQ.currval,0,0)
+	</insert>
+	
+	<select id="contentView" parameterType="int" resultType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		SELECT * FROM MVC_BOARD WHERE BID = #{bId}
+	</select>
+	
+	<update id="upHit" parameterType="int">
+		UPDATE MVC_BOARD SET BHIT = BHIT + 1 WHERE BID = #{bId}
+	</update>
+	
+	<update id="modify" parameterType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		UPDATE MVC_BOARD SET BTITLE = #{bTitle},BCONTENT = #{bContent} WHERE BID = #{bId}
+	</update>
+	
+	<delete id="delete" parameterType="int">
+		DELETE FROM MVC_BOARD WHERE BID = #{bId}
+	</delete>
+	
+	<select id="replyView" parameterType="int" resultType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		SELECT * FROM MVC_BOARD WHERE BID = #{bId}
+	</select>
+	
+	<insert id="reply" parameterType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		INSERT INTO MVC_BOARD(BID,BNAME,BTITLE,BCONTENT,BGROUP,BSTEP,BINDENT)
+		VALUES(MVC_BOARD_SEQ.nextval,#{bName},#{bTitle},#{bContent},#{bGroup},#{bStep}+1,#{bIndent}+1)
+	</insert>
+	
+	<update id="replyShape" parameterType="com.kyk.ezenPJT.dto.EzenBoardDto">
+		<![CDATA[
+			UPDATE MVC_BOARD SET BSTEP=${bStep}+1 WHERE BGROUP=#{bGroup} AND BSTEP > #{bStep}
+		]]>		
+	</update>
+	
+	<!-- 캘린더 처리 -->
+	<insert id="calendarInsert" parameterType="com.kyk.ezenPJT.dto.FullCalendarDto">
+		INSERT INTO FULLCALENDAR VALUES(FULLCALENDAR_SEQ.nextval,#{cId},#{cTitle},
+			#{cStart},#{cEnd},#{tStart},#{tEnd},#{cAllDay})
+	</insert>
+	
+	<select id="calendarList" parameterType="String" resultType="com.kyk.ezenPJT.dto.FullCalendarDto">
+		SELECT * FROM FULLCALENDAR WHERE CID = #{cId} ORDER BY CNO ASC
+	</select>
+	
+	<update id="calendarUpdate" parameterType="com.kyk.ezenPJT.dto.FullCalendarDto">
+		UPDATE FULLCALENDAR SET CSTART=#{cStart},CEND=#{cEnd},CTITLE=#{cTitle} WHERE CNO=#{cNo}
+	</update>
+	
+	<delete id="calendarDelete" parameterType="com.kyk.ezenPJT.dto.FullCalendarDto">
+		DELETE FROM FULLCALENDAR WHERE CNO=#{cNo}
+	</delete>
+	
+	<!-- dashboard -->
+	<select id="dashBoardList" resultType="com.kyk.ezenPJT.dto.DashBoardDto">
+		SELECT * FROM DASHBOARD ORDER BY REGDATE ASC
+	</select>
+	
+	<!-- auth db -->
+	<select id="authDB" parameterType="String" resultType="com.kyk.ezenPJT.dto.AuthUserDto">
+		SELECT * FROM AUTHUSER WHERE authUsername = #{authUsername}
+	</select>
+	
+	<insert id="authInsert" parameterType="com.kyk.ezenPJT.dto.AuthUserDto">
+		INSERT INTO AUTHUSER (AUTHUSERNAME,AUTHPW) VALUES(#{authUsername},#{authPw})
+	</insert>
+	
+	<select id="authLogin" parameterType="String" resultType="com.kyk.ezenPJT.dto.AuthUserDto">
+		SELECT * FROM AUTHUSER WHERE authUsername = #{username}
+	</select>
+</mapper>	
